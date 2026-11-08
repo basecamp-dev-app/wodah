@@ -9,9 +9,9 @@ Node 24 recommended. `npm ci`, `npm test`, `npm run check`, `npm run build`, `np
 ## Define your exact stretch
 
 1. Open the map; enable OpenStreetMap for river/road context if useful. Display conversion is approximate (3–5 m), analysis remains BNG.
-2. Draw river: click along your exact centreline including both endpoints, then Finish drawing. Do not infer the study from a postcode.
+2. Draw river: click along your exact centreline including both endpoints, then Finish drawing. The boundary defines the analysis extent; the line places candidates and orients cross-sections. The elevation TIFF has no river centreline extracted. Do not infer the study from a postcode.
 3. Draw boundary: click around the surrounding floodplain, then Finish. Include enough land to investigate edge contacts. Use Edit vertices to drag points. Redrawing replaces the previous geometry only when finished. Undo removes the last drawing point.
-4. Set interval, search radius, elevation stress test and assumed channel exclusion. Generate candidates. Select candidates on map, tabs or table. Change level and relative stress test; inspect footprint, cross-section, curves and edge indicators.
+4. Set interval, search radius, elevation stress test and assumed channel exclusion. Preview the candidate count. Generate candidates automatically increases the interval in 5 m steps if needed to keep at most 40 candidates across the full drawn stretch; the effective interval is shown, saved and exported. Select candidates on map, tabs or table. Change level and relative stress test; inspect footprint, cross-section, curves and edge indicators.
 5. Save setup downloads a projected JSON backup; setup also survives refresh in this browser. Import it on another device. Export CSV and GeoJSON; Print report saves a PDF through your browser.
 
 The application starts empty. No restoration endpoints, demonstration candidates or site findings are fabricated.

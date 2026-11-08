@@ -1,7 +1,26 @@
 // Wodah screening v1. All coordinates and areas are EPSG:27700 metres.
 export function inside([x,y],poly){let hit=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){let [xi,yi]=poly[i],[xj,yj]=poly[j];if((yi>y)!=(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)hit=!hit}return hit}
 export function lineDistance(p,line){let best=Infinity;for(let i=1;i<line.length;i++){const a=line[i-1],b=line[i],dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy||1)));best=Math.min(best,Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy))}return best}
-export function candidatesAlong(line,spacing){if(!Number.isFinite(spacing)||spacing<10)throw Error('Sampling interval must be at least 10 m.');let length=0;const segments=[];for(let i=1;i<line.length;i++){let d=Math.hypot(line[i][0]-line[i-1][0],line[i][1]-line[i-1][1]);if(d>0){segments.push({a:line[i-1],b:line[i],start:length,length:d});length+=d}}if(length<10)throw Error('Draw a stretch at least 10 m long.');if(Math.floor(length/spacing)+1>40)throw Error('At most 40 candidates. Increase the sampling interval or shorten the stretch.');const out=[];for(let d=0;d<=length;d+=spacing){let s=segments.find(s=>d<=s.start+s.length)||segments.at(-1),t=(d-s.start)/s.length;out.push({id:`G${String(out.length+1).padStart(2,'0')}`,chainage:d,point:[s.a[0]+t*(s.b[0]-s.a[0]),s.a[1]+t*(s.b[1]-s.a[1])],direction:[(s.b[0]-s.a[0])/s.length,(s.b[1]-s.a[1])/s.length]})}return out}
+export const maxCandidates=40;
+function lineSegments(line){
+ let length=0;const segments=[];
+ for(let i=1;i<line.length;i++){const a=line[i-1],b=line[i],d=Math.hypot(b[0]-a[0],b[1]-a[1]);if(!Number.isFinite(d))throw Error('River coordinates must be finite.');if(d>0){segments.push({a,b,start:length,length:d});length+=d}}
+ if(length<10)throw Error('Draw a stretch at least 10 m long.');
+ return {length,segments};
+}
+function planForLength(length,spacing){
+ if(!Number.isFinite(spacing)||spacing<10)throw Error('Sampling interval must be at least 10 m.');
+ const requestedCount=Math.floor(length/spacing)+1;
+ // Round up to a readable interval while preserving the full drawn stretch.
+ const interval=requestedCount>maxCandidates?Math.ceil(length/(maxCandidates-1)/5)*5:spacing;
+ return {length,spacing:interval,count:Math.floor(length/interval)+1,requestedCount,adjusted:interval!==spacing};
+}
+export function samplingPlan(line,spacing){return planForLength(lineSegments(line).length,spacing)}
+export function candidatesAlong(line,spacing){
+ const {length,segments}=lineSegments(line),plan=planForLength(length,spacing),out=[];
+ for(let i=0;i<plan.count;i++){const d=i*plan.spacing,s=segments.find(s=>d<=s.start+s.length)||segments.at(-1),t=(d-s.start)/s.length;out.push({id:`G${String(i+1).padStart(2,'0')}`,chainage:d,point:[s.a[0]+t*(s.b[0]-s.a[0]),s.a[1]+t*(s.b[1]-s.a[1])],direction:[(s.b[0]-s.a[0])/s.length,(s.b[1]-s.a[1])/s.length]})}
+ return out;
+}
 export function connected(grid,seed,level,{mask=false}={}){
  const {width:w,height:h,z,domain,offChannel,resolution:r=1}=grid,n=w*h;
  const seen=new Uint8Array(n),queue=new Int32Array(n),escape=[],parents=mask?new Int32Array(n).fill(-1):null;let routeTarget=-1;let head=0,tail=0,area=0,extraArea=0,geometric=0,studyEdge=false,nodata=false,openEdge=false;
